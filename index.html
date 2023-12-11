@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeux d'évitement</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        #joueur {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+        }
+
+        .obstacle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: black;
+            border-radius: 5px;
+        }
+
+        #score {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: black;
+        }
+
+        #boutique {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: black;
+            cursor: pointer;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #boutiqueModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: white;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+        }
+
+        #skins {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .skin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            color: red;
+            text-align: center;
+        }
+
+        #menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        #menu button {
+            margin: 10px;
+            font-size: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="joueur"></div>
+    <div id="score">Score : <span id="scoreValue">0</span></div>
+    <button id="boutique" onclick="afficherBoutique()">Boutique</button>
+
+    <div id="boutiqueModal">
+        <h2>Boutique</h2>
+        <div id="skins" onclick="changerSkin()">
+            <div class="skin" style="background-color: blue;"></div>
+            <div class="skin" style="background-color: green;"></div>
+            <div class="skin" style="background-color: purple;"></div>
+            <div class="skin" style="background-color: pink;"></div>
+            <div class="skin" style="background-color: orange;"></div>
+            <div class="skin" style="background-color: yellow;"></div>
+            <div class="skin" style="background-color: brown;"></div>
+            <div class="skin" style="background-color: cyan;"></div>
+            <div class="skin" style="background-color: maroon;"></div>
+            <div class="skin" style="background-color: silver;"></div>
+        </div>
+        <button onclick="fermerBoutique()">Fermer</button>
+    </div>
+
+    <div id="gameOver">GAME OVER</div>
+
+    <div id="menu">
+        <button onclick="commencerPartie()">Jouer</button>
+        <button onclick="afficherBoutique()">Boutique</button>
+        <button onclick="quitterJeu()">Quitter</button>
+    </div>
+
+    <script>
+        let partieEnCours = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const joueur = document.getElementById("joueur");
+            const scoreElement = document.getElementById("scoreValue");
+            const gameOverElement = document.getElementById("gameOver");
+            const menuElement = document.getElementById("menu");
+            let score = 0;
+
+            function afficherScore() {
+                scoreElement.textContent = score;
+            }
+
+            function creerObstacle() {
+                if (partieEnCours) {
+                    const obstacle = document.createElement("div");
+                    obstacle.className = "obstacle";
+                    obstacle.style.left = Math.random() * (window.innerWidth - 50) + "px";
+                    document.body.appendChild(obstacle);
+
+                    animeObstacle(obstacle);
+                }
+            }
+
+            function animeObstacle(obstacle) {
+                let top = 0;
+
+                const animation = setInterval(() => {
+                    if (top > window.innerHeight - 50) {
+                        if (collision(joueur, obstacle)) {
+                            clearInterval(animation);
+                            afficherGameOver();
+                            setTimeout(() => {
+                                document.location.reload();
+                            }, 5000);
+                        }
+                        obstacle.remove();
+                        score++;
+                        afficherScore();
+                        clearInterval(animation);
+                    } else {
+                        top += 5;
+                        obstacle.style.top = top + "px";
+                    }
+                }, 20);
+            }
+
+            function afficherGameOver() {
+                gameOverElement.style.display = "block";
+            }
+
+            function collision(joueur, obstacle) {
+                const rect1 = joueur.getBoundingClientRect();
+                const rect2 = obstacle.getBoundingClientRect();
+                return !(
+                    rect1.top > rect2.bottom ||
+                    rect1.right < rect2.left ||
+                    rect1.bottom < rect2.top ||
+                    rect1.left > rect2.right
+                );
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (partieEnCours) {
+                    if (event.key === "ArrowLeft" && joueur.offsetLeft > 0) {
+                        joueur.style.left = joueur.offsetLeft - 10 + "px";
+                    } else if (event.key === "ArrowRight" && joueur.offsetLeft < window.innerWidth - 50) {
+                        joueur.style.left = joueur.offsetLeft + 10 + "px";
+                    }
+                }
+            });
+
+            setInterval(() => {
+                creerObstacle();
+            }, 2000);
+        });
+
+        function afficherBoutique() {
+            const modal = document.getElementById("boutiqueModal");
+            modal.style.display = "block";
+        }
+
+        function fermerBoutique() {
+            const modal = document.getElementById("boutiqueModal");
+            modal.style.display = "none";
+        }
+
+        function changerSkin(couleur) {
+            const joueur = document.getElementById("joueur");
+            joueur.style.backgroundColor = couleur;
+            fermerBoutique();
+        }
+
+        function commencerPartie() {
+            partieEnCours = true;
+            const menuElement = document.getElementById("menu");
+            menuElement.style.display = "none";
+        }
+
+        function quitterJeu() {
+            window.close();
+        }
+    </script>
+</body>
+</html>
